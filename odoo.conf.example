@@ -1,0 +1,23 @@
+[options]
+# Configuration générale d'Odoo
+addons_path = /mnt/extra-addons
+data_dir = /var/lib/odoo
+
+# Sécurité
+admin_passwd = admin_password
+; Changez ce mot de passe pour la production
+
+# Performance
+workers = 2
+max_cron_threads = 1
+
+# Mise en réseau
+proxy_mode = True
+
+# Logging
+log_level = info
+logfile = /var/log/odoo/odoo.log
+
+# Autres options
+; list_db = False
+; dbfilter = ^%h$

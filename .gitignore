@@ -1,0 +1,27 @@
+# Données Docker
+postgres-data/
+odoo-data/*
+!odoo-data/addons/
+!odoo-data/etc/
+odoo-data/etc/*
+!odoo-data/etc/odoo.conf.example
+
+# Sauvegardes
+*.sql
+*.dump
+
+# Logs
+*.log
+
+# Environnement
+.env
+.env.*
+!.env.example
+
+# Divers
+.DS_Store
+.idea/
+.vscode/
+__pycache__/
+*.py[cod]
+*$py.class

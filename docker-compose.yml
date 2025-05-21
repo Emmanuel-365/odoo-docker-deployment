@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  odoo:
+    image: odoo:18
+    container_name: odoo_server
+    hostname: odoo
+    depends_on:
+      - postgres
+    ports:
+      - "${ODOO_PORT:-8069}:8069"
+    volumes:
+      - odoo-data:/var/lib/odoo
+      - ./odoo-data/addons:/mnt/extra-addons
+      - ./odoo-data/etc:/etc/odoo
+    env_file:
+      - .env
+    environment:
+      - HOST=${ODOO_DB_HOST}
+      - USER=${ODOO_DB_USER}
+      - PASSWORD=${ODOO_DB_PASSWORD}
+    networks:
+      - odoo_network
+    restart: always
+
+  postgres:
+    image: postgres:15
+    container_name: odoo_postgres
+    hostname: postgres
+    env_file:
+      - .env
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - odoo_network
+    restart: always
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: odoo_pgadmin
+    hostname: pgadmin
+    depends_on:
+      - postgres
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    env_file:
+      - .env
+    networks:
+      - odoo_network
+    restart: always
+
+volumes:
+  odoo-data:
+    driver: local
+  postgres-data:
+    driver: local
+
+networks:
+  odoo_network:
+    driver: bridge

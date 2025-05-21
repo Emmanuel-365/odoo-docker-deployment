@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  odoo:
+    image: odoo:18
+    hostname: odoo
+    depends_on:
+      - postgres
+    ports:
+      - "${ODOO_PORT:-8069}:8069"
+    volumes:
+      - odoo-data:/var/lib/odoo
+      - odoo-addons:/mnt/extra-addons
+      - odoo-config:/etc/odoo
+    env_file:
+      - .env
+    environment:
+      - HOST=${ODOO_DB_HOST}
+      - USER=${ODOO_DB_USER}
+      - PASSWORD=${ODOO_DB_PASSWORD}
+    networks:
+      - odoo_network
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+      placement:
+        constraints:
+          - node.role == worker
+
+  postgres:
+    image: postgres:15
+    hostname: postgres
+    env_file:
+      - .env
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - odoo_network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - node.role == manager
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    hostname: pgadmin
+    depends_on:
+      - postgres
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    env_file:
+      - .env
+    networks:
+      - odoo_network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+volumes:
+  odoo-data:
+    driver: local
+  odoo-addons:
+    driver: local
+  odoo-config:
+    driver: local
+  postgres-data:
+    driver: local
+
+networks:
+  odoo_network:
+    driver: overlay
