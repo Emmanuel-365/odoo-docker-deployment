@@ -35,7 +35,7 @@ Idéal pour le développement, les tests ou les petites entreprises.
 
 1. Clonez ce repository :
    ```bash
-   git clone https://github.com/votre-username/odoo18-docker.git
+   git clone https://github.com/Emmanuel-365/odoo18-docker.git
    cd odoo18-docker
    ```
 
