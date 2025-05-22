@@ -1,174 +1,192 @@
-# 🚀 Odoo 18 Docker Deployment Guide
+# Odoo Docker Deployment
 
-[![Odoo Version](https://img.shields.io/badge/Odoo-18-success)](https://www.odoo.com/)
-[![Docker](https://img.shields.io/badge/Docker-20.10.0+-blue)](https://www.docker.com/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+Ce dépôt contient les fichiers nécessaires pour déployer Odoo 18 avec PostgreSQL et PgAdmin en utilisant Docker Compose et Docker Swarm.
 
-Ce repository contient des configurations Docker pour déployer Odoo 18 facilement et efficacement, que ce soit pour le développement, les tests ou la production. Deux configurations sont proposées : une simple avec Docker Compose et une avancée avec Docker Swarm pour la haute disponibilité.
+## Prérequis
 
-## 📋 Prérequis
+- Docker et Docker Compose installés
+- Pour la partie Swarm : un cluster Docker Swarm initialisé avec au moins 2 nœuds
 
-- Docker Engine v20.10.0+
-- Docker Compose v2.0.0+
-- Pour le déploiement Swarm : au moins deux machines (physiques ou virtuelles)
-- Accès à Internet pour télécharger les images Docker
-
-## 🏗️ Structure du Repository
+## Structure du projet
 
 ```
-odoo18-docker/
-├── docker-compose.yml     # Configuration pour déploiement simple
-├── docker-stack.yml       # Configuration pour déploiement Swarm (haute disponibilité)
-├── .env.example           # Modèle pour les variables d'environnement
-├── odoo-data/             # Contient les données d'Odoo
-│   ├── addons/            # Pour les modules personnalisés
-│   └── etc/               # Fichiers de configuration
-│       └── odoo.conf      # Configuration principale d'Odoo
-└── README.md              # Ce fichier
+odoo-docker-deployment/
+├── docker-compose.yml      # Configuration pour Docker Compose
+├── docker-stack.yml        # Configuration pour Docker Swarm
+├── .env.example            # Exemple de fichier de variables d'environnement
+├── odoo.conf.example       # Exemple de fichier de configuration Odoo
+├── setup.sh                # Script d'initialisation de l'environnement
+├── setup-secrets.sh        # Script de création des secrets pour Docker Compose
+└── create-secrets.sh       # Script de création des secrets pour Docker Swarm
 ```
 
-## 🚀 Déploiement Simple (Docker Compose)
+## Partie 1 : Déploiement avec Docker Compose
 
-Idéal pour le développement, les tests ou les petites entreprises.
+### Étape 1 : Initialisation de l'environnement
 
-### Installation rapide
-
-1. Clonez ce repository :
+1. Cloner ce dépôt :
    ```bash
-   git clone https://github.com/Emmanuel-365/odoo18-docker.git
-   cd odoo18-docker
+   git clone https://github.com/Emmanuel-365/odoo-docker-deployment.git
+   cd odoo-docker-deployment
    ```
 
-2. Créez les dossiers nécessaires et configurez l'environnement :
+2. Exécuter le script d'initialisation :
    ```bash
-   mkdir -p odoo-data/addons odoo-data/etc
-   cp odoo.conf.example odoo-data/etc/odoo.conf
-   cp .env.example .env
+   chmod +x setup.sh
+   ./setup.sh
    ```
+   Ce script crée les répertoires nécessaires, copie les fichiers de configuration et génère un fichier `.env` avec des mots de passe aléatoires.
 
-3. Modifiez le fichier `.env` avec vos propres valeurs, particulièrement les mots de passe :
+3. Créer les fichiers secrets :
    ```bash
-   nano .env
+   chmod +x setup-secrets.sh
+   ./setup-secrets.sh
    ```
+   Ce script crée les fichiers secrets nécessaires pour Docker Compose à partir des variables du fichier `.env`.
 
-4. Lancez les conteneurs :
-   ```bash
-   docker-compose up -d
-   ```
+### Étape 2 : Démarrage des services
 
-5. Accédez à Odoo via http://localhost:8069 et à pgAdmin via http://localhost:5050
-
-### Services inclus
-
-- **Odoo 18** : Système ERP/CRM complet (port 8069)
-- **PostgreSQL 15** : Base de données pour stocker les données d'Odoo
-- **pgAdmin 4** : Interface d'administration web pour PostgreSQL (port 5050)
-
-## 🌐 Déploiement Avancé (Docker Swarm)
-
-Pour les environnements de production nécessitant haute disponibilité et tolérance aux pannes.
-
-### Configuration du cluster Swarm
-
-1. Sur la machine manager :
-   ```bash
-   docker swarm init --advertise-addr <IP_DU_MANAGER>
-   ```
-
-2. Sur la/les machine(s) worker, exécutez la commande affichée par l'initialisation du Swarm.
-
-3. Copiez les fichiers de configuration sur le manager :
-   ```bash
-   scp docker-stack.yml .env.example <USER>@<IP_DU_MANAGER>:~/odoo18-docker/
-   ```
-
-4. Sur le manager, configurez l'environnement :
-   ```bash
-   cp .env.example .env
-   nano .env  # Modifiez avec vos propres valeurs
-   ```
-
-5. Déployez la stack Odoo :
-   ```bash
-   docker stack deploy -c docker-stack.yml odoo-stack
-   ```
-
-### Caractéristiques du déploiement Swarm
-
-- **Haute disponibilité** : Plusieurs instances d'Odoo réparties sur différentes machines
-- **Tolérance aux pannes** : Le service reste disponible même si une machine tombe en panne
-- **Mise à jour sans interruption** : Les mises à jour se font sans arrêter le service
-
-## 🔧 Configuration
-
-### Configuration d'Odoo
-
-Modifiez le fichier `odoo-data/etc/odoo.conf` pour personnaliser Odoo selon vos besoins. Exemple de configuration de base :
-
-```ini
-[options]
-addons_path = /mnt/extra-addons
-data_dir = /var/lib/odoo
-admin_passwd = admin_password  # À changer pour la production !
+Lancer les services avec Docker Compose :
+```bash
+docker-compose up -d
 ```
 
-### Modules personnalisés
+### Étape 3 : Accès aux services
 
-Placez vos modules personnalisés dans le dossier `odoo-data/addons/` pour qu'ils soient automatiquement disponibles dans Odoo.
+- **Odoo** : http://localhost:8069
+- **PgAdmin** : http://localhost:5050
+  - Email : admin@example.com (ou la valeur définie dans `.env`)
+  - Mot de passe : celui défini dans `.env`
 
-## 🛡️ Sécurité
+## Partie 2 : Déploiement avec Docker Swarm
 
-Pour un environnement de production, n'oubliez pas de :
+### Étape 1 : Initialisation du cluster Swarm
 
-1. **Ne jamais commiter votre fichier `.env` dans Git** - il contient des informations sensibles
-2. Utiliser des mots de passe forts dans votre fichier `.env`
-3. Mettre en place HTTPS avec un certificat SSL
-4. Configurer un pare-feu pour restreindre l'accès aux ports
-5. Considérer l'utilisation d'un proxy inverse comme Nginx ou Traefik pour ajouter une couche de sécurité supplémentaire
-6. Changer régulièrement les mots de passe et mettre à jour les images Docker
+Si vous n'avez pas encore initialisé votre cluster Swarm :
 
-## 📊 Maintenance
+```bash
+# Sur le nœud manager
+docker swarm init --advertise-addr <IP_MANAGER>
+
+# Sur les nœuds workers (utiliser la commande fournie par l'initialisation)
+docker swarm join --token <TOKEN> <IP_MANAGER>:2377
+```
+
+### Étape 2 : Création des secrets et configurations Docker
+
+Sur le nœud manager, exécuter le script de création des secrets :
+
+```bash
+chmod +x create-secrets.sh
+./create-secrets.sh
+```
+
+Ce script crée les secrets Docker et la configuration pour Odoo à partir des variables du fichier `.env`.
+
+### Étape 3 : Déploiement de la stack
+
+Sur le nœud manager, déployer la stack :
+
+```bash
+docker stack deploy -c docker-stack.yml odoo_stack
+```
+
+### Étape 4 : Vérification du déploiement
+
+```bash
+docker stack services odoo_stack
+docker stack ps odoo_stack
+```
+
+### Étape 5 : Accès aux services
+
+- **Odoo** : http://<IP_MANAGER>:8069
+- **PgAdmin** : http://<IP_MANAGER>:5050
+  - Email : admin@example.com (ou la valeur définie dans `.env`)
+  - Mot de passe : celui défini dans `.env`
+
+## Caractéristiques de la configuration
+
+Cette configuration respecte les exigences suivantes :
+
+1. **Services distincts** :
+   - odoo (serveur applicatif)
+   - postgres (base de données)
+   - pgadmin (interface d'administration de PostgreSQL)
+
+2. **Spécifications pour chaque service** :
+   - container_name : nom explicite du conteneur
+   - hostname : nom réseau interne
+   - ports : ports exposés
+   - image : image Docker officielle
+   - networks : intégration à un réseau Docker privé
+   - volumes : volume persistant selon le service
+
+3. **Redémarrage automatique et gestion des dépendances** :
+   - Utilisation de l'option 'restart: always' pour chaque service
+   - Utilisation de l'option 'depends_on' pour que PostgreSQL soit lancé avant Odoo
+
+4. **Gestion de la sécurité** :
+   - Utilisation de secrets pour configurer les accès d'authentification
+   - Utilisation du fichier .env pour les variables d'environnement non sensibles
+
+5. **Volumes persistants pour Odoo** :
+   - /var/lib/odoo/filestore : stockage des pièces jointes
+   - /mnt/extra-addons : modules personnalisés
+
+6. **Mise en cluster avec Docker Swarm** :
+   - Configuration adaptée pour le déploiement en stack Swarm
+   - Support pour un cluster d'au moins 2 nœuds
+
+## Personnalisation
+
+Vous pouvez personnaliser le déploiement en modifiant les fichiers suivants :
+
+- `.env` : variables d'environnement pour les services
+- `odoo.conf` : configuration spécifique d'Odoo
+- `docker-compose.yml` ou `docker-stack.yml` : configuration des services Docker
+
+## Maintenance
 
 ### Sauvegarde de la base de données
 
 ```bash
-docker exec -t $(docker ps -f name=postgres -q) pg_dump -U odoo postgres > backup_$(date +%Y%m%d).sql
+# Pour Docker Compose
+docker-compose exec postgres pg_dump -U odoo postgres > odoo_backup.sql
+
+# Pour Docker Swarm
+POSTGRES_CONTAINER=$(docker ps -q -f name=postgres)
+docker exec $POSTGRES_CONTAINER pg_dump -U odoo postgres > odoo_backup.sql
 ```
 
-### Restauration d'une sauvegarde
-
-```bash
-docker cp backup.sql $(docker ps -f name=postgres -q):/tmp/
-docker exec -t $(docker ps -f name=postgres -q) psql -U odoo -d postgres -f /tmp/backup.sql
-```
-
-### Mise à jour d'Odoo
-
-1. Modifiez la version de l'image dans `docker-compose.yml` ou `docker-stack.yml`
-2. Redéployez avec `docker-compose up -d` ou `docker stack deploy -c docker-stack.yml odoo-stack`
-
-## 🔍 Dépannage
-
-### Consulter les logs
+### Restauration de la base de données
 
 ```bash
 # Pour Docker Compose
-docker-compose logs -f odoo
+cat odoo_backup.sql | docker-compose exec -T postgres psql -U odoo -d postgres
 
 # Pour Docker Swarm
-docker service logs odoo-stack_odoo
+POSTGRES_CONTAINER=$(docker ps -q -f name=postgres)
+docker cp odoo_backup.sql $POSTGRES_CONTAINER:/tmp/
+docker exec $POSTGRES_CONTAINER psql -U odoo -d postgres -f /tmp/odoo_backup.sql
 ```
 
-### Problèmes courants
+### Mise à jour des services
 
-- **Odoo ne démarre pas** : Vérifiez la connexion à PostgreSQL et les permissions des volumes
-- **Erreurs de base de données** : Consultez les logs PostgreSQL pour identifier les problèmes
-- **Modules non disponibles** : Vérifiez le chemin `addons_path` dans `odoo.conf`
+```bash
+# Pour Docker Compose
+docker-compose pull
+docker-compose up -d
 
-## 🤝 Contribution
+# Pour Docker Swarm
+docker service update --image odoo:latest odoo_stack_odoo
+```
 
-Les contributions sont les bienvenues ! N'hésitez pas à ouvrir une issue ou soumettre une pull request.
+## Sécurité
 
-## 📄 Licence
+Cette configuration utilise des secrets Docker pour sécuriser les informations sensibles :
 
-Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
+- Pour Docker Compose : les secrets sont stockés dans des fichiers dans le répertoire `./secrets/`
+- Pour Docker Swarm : les secrets sont gérés par Docker Swarm et injectés dans les conteneurs
+
+Ne partagez jamais vos fichiers `.env` ou le contenu du répertoire `./secrets/` dans des dépôts publics.

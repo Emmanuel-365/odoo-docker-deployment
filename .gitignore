@@ -17,6 +17,7 @@ odoo-data/etc/*
 .env
 .env.*
 !.env.example
+secrets
 
 # Divers
 .DS_Store

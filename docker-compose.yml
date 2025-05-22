@@ -10,7 +10,7 @@ services:
     ports:
       - "${ODOO_PORT:-8069}:8069"
     volumes:
-      - odoo-data:/var/lib/odoo
+      - odoo-filestore:/var/lib/odoo/filestore
       - ./odoo-data/addons:/mnt/extra-addons
       - ./odoo-data/etc:/etc/odoo
     env_file:
@@ -22,6 +22,13 @@ services:
     networks:
       - odoo_network
     restart: always
+    secrets:
+      - source: postgres_user
+        mode: 0444
+      - source: postgres_password
+        mode: 0444
+      - source: odoo_admin_password
+        mode: 0444
 
   postgres:
     image: postgres:15
@@ -29,11 +36,20 @@ services:
     hostname: postgres
     env_file:
       - .env
+    environment:
+      - POSTGRES_USER_FILE=/run/secrets/postgres_user
+      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password
+      - POSTGRES_DB=${POSTGRES_DB:-postgres}
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
       - odoo_network
     restart: always
+    secrets:
+      - source: postgres_user
+        mode: 0444
+      - source: postgres_password
+        mode: 0444
 
   pgadmin:
     image: dpage/pgadmin4:latest
@@ -45,12 +61,21 @@ services:
       - "${PGADMIN_PORT:-5050}:80"
     env_file:
       - .env
+    environment:
+      - PGADMIN_DEFAULT_EMAIL_FILE=/run/secrets/pgadmin_email
+      - PGADMIN_DEFAULT_PASSWORD_FILE=/run/secrets/pgadmin_password
+      - PGADMIN_LISTEN_PORT=80
     networks:
       - odoo_network
     restart: always
+    secrets:
+      - source: pgadmin_email
+        mode: 0444
+      - source: pgadmin_password
+        mode: 0444
 
 volumes:
-  odoo-data:
+  odoo-filestore:
     driver: local
   postgres-data:
     driver: local
@@ -58,3 +83,15 @@ volumes:
 networks:
   odoo_network:
     driver: bridge
+
+secrets:
+  postgres_user:
+    file: ./secrets/postgres_user.txt
+  postgres_password:
+    file: ./secrets/postgres_password.txt
+  pgadmin_email:
+    file: ./secrets/pgadmin_email.txt
+  pgadmin_password:
+    file: ./secrets/pgadmin_password.txt
+  odoo_admin_password:
+    file: ./secrets/odoo_admin_password.txt
